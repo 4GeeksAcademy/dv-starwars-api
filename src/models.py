@@ -2,18 +2,70 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
 
-    def __repr__(self):
-        return '<User %r>' % self.username
+
+
+class User(db.Model):
+    id = db.Column(db.Integer(),  primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(80), nullable=False, unique=True)
 
     def serialize(self):
         return {
             "id": self.id,
-            "email": self.email,
-            # do not serialize the password, its a security breach
+            "name": self.name,
+            "email": self.email
         }
+
+
+class People(db.Model):
+    id = db.Column(db.Integer(),  primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    gender = db.Column(db.String(80), nullable=False)
+
+    favorite = db.relationship("Favorite", back_populates="people")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "gender": self.gender
+        }
+
+
+class Planet(db.Model):
+    id = db.Column(db.Integer(),  primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    population = db.Column(db.String(80), nullable=False)
+
+    favorite = db.relationship("Favorite", back_populates="planet")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "population": self.population
+        }
+    
+
+class Favorite(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey("user.id"))
+    people_id = db.Column(db.Integer(), db.ForeignKey("people.id"), nullable=True)
+    planet_id = db.Column(db.Integer(), db.ForeignKey("planet.id"), nullable=True)
+
+    planet = db.relationship("Planet", back_populates="favorite" )
+    people = db.relationship("People", back_populates="favorite" )
+
+
+    def serialize(self):
+        return{
+            "id": self.id,
+            "people": self.planet.serialize(),
+            # "planet": self.planet
+        }
+
+
+    
+    
+

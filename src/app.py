@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, People, Planet, User, Favorite
 #from models import Person
 
 app = Flask(__name__)
@@ -36,14 +36,120 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+# gel all people
+@app.route("/people", methods=["GET"])
+def get_all_people():
+    try:
+        people = People.query.all()
+        return jsonify([item.serialize() for item in people]), 200
+    except Exception as err:
+        return jsonify({"message":f"Error: {err.args}"}), 500
 
-    return jsonify(response_body), 200
+
+# get one people
+@app.route("/people/<int:theid>", methods=["GET"])
+def get_one_people(theid=None):
+    try:
+        people = People.query.get(theid)
+
+        if people is None:
+            return jsonify({"message": "user no found"}), 404
+        else:
+            return jsonify(people.serialize()), 200
+
+    except Exception as err:
+        return jsonify({"message" f"Error: {err}"}), 500
+
+
+# gel all planet
+@app.route("/planet", methods=["GET"])
+def get_all_planet():
+    try:
+        people = Planet.query.all()
+        return jsonify([item.serialize() for item in people]), 200
+    except Exception as err:
+        return jsonify({"message":f"Error: {err.args}"}), 500
+
+
+# get one planet
+@app.route("/planet/<int:theid>", methods=["GET"])
+def get_one_planet(theid=None):
+    try:
+        planet = Planet.query.get(theid)
+
+        if planet is None:
+            return jsonify({"message": "user no found"}), 404
+        else:
+            return jsonify(planet.serialize()), 200
+
+    except Exception as err:
+        return jsonify({"message" f"Error: {err}"}), 500
+
+
+@app.route("/favorite/planet/<int:planet_id>", methods=["POST"])
+def add_planet_fav(planet_id=None):
+    
+    try:
+        body = request.json
+        fav = Favorite()
+        fav.planet_id = planet_id
+        fav.user_id = body["user_id"]
+
+        db.session.add(fav)
+        db.session.commit()
+
+        return jsonify("user agregado exitosamente"), 201
+
+    except Exception as err:
+        return jsonify({"message":f"Error {err.args}"})
+    
+
+@app.route("/favorite/people/<int:people_id>", methods=["POST"])
+def add_people_fav(people_id=None):
+    
+    try:
+        body = request.json
+        fav = Favorite()
+        fav.people_id = people_id
+        fav.user_id = body["user_id"]
+        fav.planet_id=None
+
+        db.session.add(fav)
+        db.session.commit()
+
+        return jsonify("user agregado exitosamente"), 201
+
+    except Exception as err:
+        return jsonify({"message":f"Error {err.args}"})
+    
+
+
+
+
+
+# get all users
+@app.route("/user", methods=["GET"])
+def get_all_user():
+    try:
+        users = User.query.all()
+
+        return jsonify([item.serialize() for item in users])
+    except Exception as err:
+        return jsonify({"message":f"Error: {err}"})
+
+
+
+@app.route("/users/favorites", methods=["GET"])
+def get_all_user_fav():
+    try:
+        fav = Favorite.query.filter_by(user_id=1).all()
+        print(fav[0].serialize())
+        return jsonify(list(map(lambda item: item.serialize(), fav))), 200
+        return jsonify("trabajando por usted"), 200
+    except Exception as err:
+        return jsonify(f"error {err.args}")
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
